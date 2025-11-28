@@ -66,7 +66,6 @@ async def auth_google_callback(code: str, db: Session = Depends(get_db)):
             email=user_info["email"],
             name=user_info.get("name"),
             picture=user_info.get("picture"),
-            google_id=user_info.get("id")
         )
         db.add(user)
         db.commit()
@@ -75,7 +74,6 @@ async def auth_google_callback(code: str, db: Session = Depends(get_db)):
         # Update existing user info
         user.name = user_info.get("name")
         user.picture = user_info.get("picture")
-        user.google_id = user_info.get("id")
         db.commit()
         db.refresh(user)
     

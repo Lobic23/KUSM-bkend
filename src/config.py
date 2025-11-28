@@ -16,15 +16,12 @@ class Settings:
     
     # JWT Settings
     SECRET_KEY = os.getenv("SECRET_KEY")
-    ALGORITHM = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
     
     # URLs
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
     BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
     
-    @property
-    def REDIRECT_URI(self):
-        return f"{self.BACKEND_URL}/auth/google/callback"
+    REDIRECT_URI=f"{BACKEND_URL}/auth/google/callback"
 
 settings = Settings()

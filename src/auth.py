@@ -6,7 +6,7 @@ from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from .config import settings
 from .database import get_db
-from .models import User, TokenData, UserDB
+from .models import User, UserDB
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -17,7 +17,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY)
     return encoded_jwt
 
 async def get_current_user(
@@ -30,16 +30,15 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
-        token_data = TokenData(email=email)
     except JWTError:
         raise credentials_exception
     
     # Get user from database
-    user = db.query(UserDB).filter(UserDB.email == token_data.email).first()
+    user = db.query(UserDB).filter(UserDB.email == email).first()
     if user is None:
         raise credentials_exception
     
