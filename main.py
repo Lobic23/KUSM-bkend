@@ -6,6 +6,9 @@
 
 import uvicorn
 if __name__ == "__main__":
-    host = "localhost"
-    port = 8080
-    uvicorn.run("src.server:app",host=host, port=port, reload=True)
+    uvicorn.run(
+        "src.server:app",
+        host="0.0.0.0",
+        port=8000, 
+        reload=True
+    )

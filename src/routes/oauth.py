@@ -18,16 +18,13 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.get("/login/google")
 async def login_google(request: Request):
     """Constructs the Google Login URL."""
-    # Dynamically build the callback URL from the request
-    redirect_uri = f"{request.base_url}auth/google/callback"
-    
     # Get where the user came from (for redirecting back after auth)
     referer = request.headers.get("referer", str(request.base_url))
-    
+
     params = {
         "response_type": "code",
         "client_id": settings.GOOGLE_CLIENT_ID,
-        "redirect_uri": redirect_uri,
+        "redirect_uri": settings.REDIRECT_URI,
         "scope": "openid profile email",
         "access_type": "offline",
         "state": referer,  # Remember where user came from, used to go back to actual fend app from google's oauth
@@ -43,14 +40,12 @@ async def auth_google_callback(
     request: Request,
     db: Session = Depends(get_db)
 ):
-    """Exchanges the Google code for a token and creates/updates user."""
-    redirect_uri = f"{request.base_url}auth/google/callback"
-    
+    """Exchanges the Google code for a token and creates/updates user."""    
     data = {
         "code": code,
         "client_id": settings.GOOGLE_CLIENT_ID,
         "client_secret": settings.GOOGLE_CLIENT_SECRET,
-        "redirect_uri": redirect_uri,
+        "redirect_uri":settings.REDIRECT_URI,
         "grant_type": "authorization_code",
     }
     

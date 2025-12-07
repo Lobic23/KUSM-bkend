@@ -12,7 +12,7 @@ app = FastAPI(title="KU Smart Meeter", version="1.0.0")
 # CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # when in prod use the fend url
+    allow_origins=["http://localhost:5173","http://localhost:5174"], # when in prod use the fend url
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
