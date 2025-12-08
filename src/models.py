@@ -1,9 +1,9 @@
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import Column, String, DateTime, Boolean
+from sqlalchemy import Column, String, DateTime, Boolean, Enum, Float, Integer, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from pydantic import BaseModel, EmailStr
-
+import enum
 Base = declarative_base()
 
 # SQLAlchemy ORM Model
@@ -30,3 +30,30 @@ class User(BaseModel):
     class Config:
         from_attributes=True
          # this thing just tells sqlalchemy User is deseializable from the table
+
+class Meter(Base):
+    __tablename__ = "meters"
+
+    meter_id = Column(Integer, primary_key=True, autoincrement=True)
+    name= Column(String)
+    sn = Column(String)
+
+
+class Phase(enum.Enum):
+    PHASE_A = 'A'
+    PHASE_B = 'B'
+    PHASE_C = 'C'
+
+class MeterData(Base):
+    __tablename__ = "meterdata"
+
+    data_id = Column(Integer, primary_key=True, autoincrement=True)
+    phase = Column(Enum(Phase), nullable=False)
+    current = Column(Float, nullable=False)
+    voltage = Column(Float, nullable=False)
+    active_power = Column(Float, nullable=False)
+    power_factor = Column(Float, nullable=False)
+    grid_consumption= Column(Float, nullable=False)
+    exported_power = Column(Float, nullable=False)
+    timestamp = Column(DateTime, nullable=False)
+    meter_id = Column(Integer, ForeignKey('meters.meter_id'))

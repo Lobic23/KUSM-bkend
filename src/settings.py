@@ -9,6 +9,7 @@ class Settings:
         self.GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
         self.GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
         self.SECRET_KEY = os.getenv("SECRET_KEY")
+        self.IAMMETER_TOKEN = os.getenv("IAMMETER_TOKEN")
 
         self.REDIRECT_URI = "http://localhost:8000/auth/google/callback" 
         # the redirect uri asserts that you host both fend and bkend on the same device 
