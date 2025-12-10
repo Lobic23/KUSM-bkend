@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routes import oauth, users
+from .routes import meter, oauth, users
 from .database import db_engine
 from .models import Base
 from .api import iammeter
@@ -8,7 +8,7 @@ from .init_meter import init_meter
 # Create database tables
 Base.metadata.create_all(bind=db_engine)
 #creating entries in db for existing meters
-init_meter()
+# init_meter()
 
 app = FastAPI(title="KU Smart Meeter", version="1.0.0")
 
@@ -24,6 +24,7 @@ app.add_middleware(
 # Include routers
 app.include_router(oauth.router)
 app.include_router(users.router)
+app.include_router(meter.router)
 
 @app.get("/")
 async def root():

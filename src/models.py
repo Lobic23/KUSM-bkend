@@ -31,7 +31,7 @@ class User(BaseModel):
         from_attributes=True
          # this thing just tells sqlalchemy User is deseializable from the table
 
-class Meter(Base):
+class MeterDB(Base):
     __tablename__ = "meters"
 
     meter_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -44,7 +44,14 @@ class Phase(enum.Enum):
     PHASE_B = 'B'
     PHASE_C = 'C'
 
-class MeterData(Base):
+class Meter(BaseModel):
+    meter_id: int
+    name: str
+    sn: str
+    class Config:
+        from_attributes=True
+
+class MeterDataDB(Base):
     __tablename__ = "meterdata"
 
     data_id = Column(Integer, primary_key=True, autoincrement=True)

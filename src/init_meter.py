@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from .models import Meter
+from .models import MeterDB
 from .database import get_db
 db: Session = next(get_db())
 def init_meter():
@@ -35,9 +35,9 @@ def init_meter():
     ]
 
     for meter in meters:
-        exists = db.query(Meter).filter_by(name=meter['name']).first()
+        exists = db.query(MeterDB).filter_by(name=meter['name']).first()
         if not exists:
-            meter = Meter(
+            meter = MeterDB(
                 name = meter['name'],
                 sn = meter['sn']
             )
