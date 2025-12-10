@@ -3,7 +3,6 @@ from typing import Optional
 from sqlalchemy import Column, String, DateTime, Boolean, Enum, Float, Integer, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from pydantic import BaseModel, EmailStr
-import enum
 Base = declarative_base()
 
 # SQLAlchemy ORM Model
@@ -39,11 +38,6 @@ class MeterDB(Base):
     sn = Column(String)
 
 
-class Phase(enum.Enum):
-    PHASE_A = 'A'
-    PHASE_B = 'B'
-    PHASE_C = 'C'
-
 class Meter(BaseModel):
     meter_id: int
     name: str
@@ -55,12 +49,26 @@ class MeterDataDB(Base):
     __tablename__ = "meterdata"
 
     data_id = Column(Integer, primary_key=True, autoincrement=True)
-    phase = Column(Enum(Phase, name = 'phase'), nullable=False)
-    current = Column(Float, nullable=False)
-    voltage = Column(Float, nullable=False)
-    active_power = Column(Float, nullable=False)
-    power_factor = Column(Float, nullable=False)
-    grid_consumption= Column(Float, nullable=False)
-    exported_power = Column(Float, nullable=False)
     timestamp = Column(DateTime, nullable=False)
     meter_id = Column(Integer, ForeignKey('meters.meter_id'))
+
+    phase_A_current = Column(Float, nullable=False)
+    phase_A_voltage = Column(Float, nullable=False)
+    phase_A_active_power = Column(Float, nullable=False)
+    phase_A_power_factor = Column(Float, nullable=False)
+    phase_A_grid_consumption= Column(Float, nullable=False)
+    phase_A_exported_power = Column(Float, nullable=False)
+
+    phase_B_current = Column(Float, nullable=False)
+    phase_B_voltage = Column(Float, nullable=False)
+    phase_B_active_power = Column(Float, nullable=False)
+    phase_B_power_factor = Column(Float, nullable=False)
+    phase_B_grid_consumption= Column(Float, nullable=False)
+    phase_B_exported_power = Column(Float, nullable=False)
+
+    phase_C_current = Column(Float, nullable=False)
+    phase_C_voltage = Column(Float, nullable=False)
+    phase_C_active_power = Column(Float, nullable=False)
+    phase_C_power_factor = Column(Float, nullable=False)
+    phase_C_grid_consumption= Column(Float, nullable=False)
+    phase_C_exported_power = Column(Float, nullable=False)
