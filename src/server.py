@@ -5,10 +5,12 @@ from .database import db_engine
 from .models import Base
 from .api import iammeter
 from .init_meter import init_meter
+import asyncio
 # Create database tables
 Base.metadata.create_all(bind=db_engine)
 #creating entries in db for existing meters
-# init_meter()
+init_meter()
+
 
 app = FastAPI(title="KU Smart Meeter", version="1.0.0")
 
@@ -26,6 +28,12 @@ app.include_router(oauth.router)
 app.include_router(users.router)
 app.include_router(meter.router)
 
+async def data_collection():
+    while True:
+        await iammeter.store_all_meter_data();
+        await asyncio.sleep(10)
+
 @app.get("/")
 async def root():
+    asyncio.create_task(data_collection())
     return {"message": "KU Smart Meter API is running", "status": "healthy"}

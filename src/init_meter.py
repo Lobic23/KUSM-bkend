@@ -44,6 +44,3 @@ def init_meter():
             db.add(meter)
             db.commit()
             db.refresh(meter)
-            print('hehe')
-        else:
-            print('not hehe')

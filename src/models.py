@@ -55,7 +55,7 @@ class MeterDataDB(Base):
     __tablename__ = "meterdata"
 
     data_id = Column(Integer, primary_key=True, autoincrement=True)
-    phase = Column(Enum(Phase), nullable=False)
+    phase = Column(Enum(Phase, name = 'phase'), nullable=False)
     current = Column(Float, nullable=False)
     voltage = Column(Float, nullable=False)
     active_power = Column(Float, nullable=False)
