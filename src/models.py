@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import Column, String, DateTime, Boolean, Enum, Float, Integer, ForeignKey
+from sqlalchemy import Column, Index, String, DateTime, Boolean, Enum, Float, Integer, ForeignKey, desc
 from sqlalchemy.ext.declarative import declarative_base
 from pydantic import BaseModel, EmailStr
 Base = declarative_base()
@@ -72,3 +72,37 @@ class MeterDataDB(Base):
     phase_C_power_factor = Column(Float, nullable=False)
     phase_C_grid_consumption= Column(Float, nullable=False)
     phase_C_exported_power = Column(Float, nullable=False)
+
+    __table_args__ = (
+        Index("idx_meter_timestamp", "meter_id", desc("timestamp")),
+    )
+
+class MeterData(BaseModel):
+    data_id: int
+    meter_id: int
+    timestamp: datetime
+
+    phase_A_current: float
+    phase_A_voltage: float
+    phase_A_active_power: float
+    phase_A_power_factor: float
+    phase_A_grid_consumption: float
+    phase_A_exported_power: float
+
+    phase_B_current: float
+    phase_B_voltage: float
+    phase_B_active_power: float
+    phase_B_power_factor: float
+    phase_B_grid_consumption: float
+    phase_B_exported_power: float
+
+    phase_C_current: float
+    phase_C_voltage: float
+    phase_C_active_power: float
+    phase_C_power_factor: float
+    phase_C_grid_consumption: float
+    phase_C_exported_power: float
+
+    class Config:
+        from_attributes=True
+
