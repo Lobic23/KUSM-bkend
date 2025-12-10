@@ -31,7 +31,7 @@ app.include_router(meter.router)
 async def data_collection():
     while True:
         await iammeter.store_all_meter_data();
-        await asyncio.sleep(10)
+        await asyncio.sleep(300)
 
 @app.get("/")
 async def root():
