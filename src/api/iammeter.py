@@ -84,9 +84,6 @@ def insert_meterdata(db: Session, meter_id: int, meter_data: dict):
 
     db.add(data)
 
-    db.add(data)
-
-
 
 def store_all_meter_data():
     db: Session = SessionLocal()
