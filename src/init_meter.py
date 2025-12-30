@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from .models import MeterDB, MeterDataDB
+from .models import MeterDB
 
 DEFAULT_METERS = [
         {"name": "Physics Department (Block 6)", "sn": "CD0FF6AB"},
@@ -52,13 +52,6 @@ def remove_meter(db: Session, sn: str, force: bool = False):
     meter = db.query(MeterDB).filter(MeterDB.sn == sn).first()
     if not meter:
         raise ValueError("Meter not found")
-    
-    has_data = db.query(MeterDataDB).filter(MeterDataDB.meter_id == meter.meter_id).first()
-    if has_data and not force:
-        raise ValueError("Cannot delete meter: it has recorded data")
-    
-    if has_data and force:
-        db.query(MeterDataDB).filter(MeterDataDB.meter_id == meter.meter_id).delete()
 
     db.delete(meter)
     db.commit()

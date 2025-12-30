@@ -1,10 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends, Request, Query
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
-from ..models import MeterDB, MeterData, MeterDataDB
+from ..models import CurrentDB, EnergyDB, MeterDB, PowerDB, VoltageDB
 from ..database import get_db
 from ..init_meter import init_meter, remove_meter
 from ..api.iammeter import get_meter_id_by_name
+from ..utils.response_format import convert_format
 from datetime import datetime, date, time
 
 router = APIRouter(prefix="/meter", tags=["meter"])
@@ -43,47 +44,105 @@ def get_all_meters(db: Session = Depends(get_db)):
 #         "data": result
 #     }
 
-@router.get("/{meter_id}/latest", response_model=MeterData)
+@router.get("/{meter_id}/latest")
 def get_latest_meter_data(
     meter_id: int,
     db: Session = Depends(get_db)
 ):
-    data = (
-        db.query(MeterDataDB)
-        .filter(MeterDataDB.meter_id == meter_id)
-        .order_by(desc(MeterDataDB.timestamp))
+    row = (
+        db.query(
+            CurrentDB,
+            VoltageDB,
+            PowerDB,
+            EnergyDB
+        )
+        .join(
+            VoltageDB,
+            (VoltageDB.meter_id == CurrentDB.meter_id) &
+            (VoltageDB.timestamp == CurrentDB.timestamp)
+        )
+        .join(
+            PowerDB,
+            (PowerDB.meter_id == CurrentDB.meter_id) &
+            (PowerDB.timestamp == CurrentDB.timestamp)
+        )
+        .join(
+            EnergyDB,
+            (EnergyDB.meter_id == CurrentDB.meter_id) &
+            (EnergyDB.timestamp == CurrentDB.timestamp)
+        )
+        .filter(CurrentDB.meter_id == meter_id)
+        .order_by(desc(CurrentDB.timestamp))
         .first()
     )
 
-    if not data:
+    if not row:
         raise HTTPException(status_code=404, detail="No data found for this meter")
 
-    return data
+    c, v, p, e = row
+
+    return convert_format(c, v, p, e)
 
 @router.get("/todaysdata/{meter_name}")
 def get_todays_data(meter_name: str, db: Session = Depends(get_db)):
-    todays_date = date.today()
-    start = datetime.combine(todays_date, time.min)
-    end = datetime.combine(todays_date, time.max)
     meter_id = get_meter_id_by_name(meter_name)
-    todays_data = (
-        db.query(MeterDataDB)
-        .filter(MeterDataDB.meter_id == meter_id, MeterDataDB.timestamp.between(start, end))
-        .all())
-    if not todays_data:
+    if not meter_id:
+        raise HTTPException(status_code=404, detail="Meter not found")
+
+    today = date.today()
+    start = datetime.combine(today, time.min)
+    end = datetime.combine(today, time.max)
+
+    rows = (
+        db.query(
+            CurrentDB,
+            VoltageDB,
+            PowerDB,
+            EnergyDB
+        )
+        .join(
+            VoltageDB,
+            (VoltageDB.meter_id == CurrentDB.meter_id) &
+            (VoltageDB.timestamp == CurrentDB.timestamp)
+        )
+        .join(
+            PowerDB,
+            (PowerDB.meter_id == CurrentDB.meter_id) &
+            (PowerDB.timestamp == CurrentDB.timestamp)
+        )
+        .join(
+            EnergyDB,
+            (EnergyDB.meter_id == CurrentDB.meter_id) &
+            (EnergyDB.timestamp == CurrentDB.timestamp)
+        )
+        .filter(
+            CurrentDB.meter_id == meter_id,
+            CurrentDB.timestamp.between(start, end)
+        )
+        .order_by(CurrentDB.timestamp)
+        .all()
+    )
+
+    if not rows:
         raise HTTPException(status_code=404, detail="No Data for Today")
+
+    data = []
+    for c, v, p, e in rows:
+        data.append(convert_format(c, v, p, e))
+
     return {
         "success": True,
         "meter_name": meter_name,
-        "data": todays_data
-      }
+        "count": len(data),
+        "data": data
+    }
 
 
 @router.get("/databydate")
 def get_data_by_date_range(
-    meter_name: str = Query(..., description="Meter name"),
-    from_date: date = Query(..., description="Start date (YYYY-MM-DD)"),
-    to_date: date = Query(..., description="End date (YYYY-MM-DD)"),
+    meter_name: str = Query(...),
+    from_date: date = Query(...),
+    to_date: date = Query(...),
     db: Session = Depends(get_db)
 ):
     if from_date > to_date:
@@ -92,30 +151,52 @@ def get_data_by_date_range(
             detail="from_date cannot be later than to_date"
         )
 
+    meter_id = get_meter_id_by_name(meter_name)
+    if not meter_id:
+        raise HTTPException(status_code=404, detail="Meter not found")
+
     start = datetime.combine(from_date, time.min)
     end = datetime.combine(to_date, time.max)
 
-    meter_id = get_meter_id_by_name(meter_name)
-    if not meter_id:
-        raise HTTPException(
-            status_code=404,
-            detail="Meter not found"
+    rows = (
+        db.query(
+            CurrentDB,
+            VoltageDB,
+            PowerDB,
+            EnergyDB
         )
-
-    data = (
-        db.query(MeterDataDB)
+        .join(
+            VoltageDB,
+            (VoltageDB.meter_id == CurrentDB.meter_id) &
+            (VoltageDB.timestamp == CurrentDB.timestamp)
+        )
+        .join(
+            PowerDB,
+            (PowerDB.meter_id == CurrentDB.meter_id) &
+            (PowerDB.timestamp == CurrentDB.timestamp)
+        )
+        .join(
+            EnergyDB,
+            (EnergyDB.meter_id == CurrentDB.meter_id) &
+            (EnergyDB.timestamp == CurrentDB.timestamp)
+        )
         .filter(
-            MeterDataDB.meter_id == meter_id,
-            MeterDataDB.timestamp.between(start, end)
+            CurrentDB.meter_id == meter_id,
+            CurrentDB.timestamp.between(start, end)
         )
+        .order_by(CurrentDB.timestamp)
         .all()
     )
 
-    if not data:
+    if not rows:
         return {
             "success": False,
-            "message": "No data found for the given date range",
+            "message": "No data found for the given date range"
         }
+
+    data = []
+    for c, v, p, e in rows:
+        data.append(convert_format(c, v, p, e))
 
     return {
         "success": True,
@@ -125,6 +206,7 @@ def get_data_by_date_range(
         "count": len(data),
         "data": data
     }
+
 
 @router.post("/addmeter")
 async def add_meter(request: Request, db: Session = Depends(get_db)):

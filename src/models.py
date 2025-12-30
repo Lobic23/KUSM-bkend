@@ -45,64 +45,72 @@ class Meter(BaseModel):
     class Config:
         from_attributes=True
 
-class MeterDataDB(Base):
-    __tablename__ = "meterdata"
+class CurrentDB(Base):
+    __tablename__ = "current"
 
-    data_id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    meter_id = Column(Integer, ForeignKey("meters.meter_id"), nullable=False)
     timestamp = Column(DateTime, nullable=False)
-    meter_id = Column(Integer, ForeignKey('meters.meter_id'))
 
     phase_A_current = Column(Float, nullable=False)
+    phase_B_current = Column(Float, nullable=False)
+    phase_C_current = Column(Float, nullable=False)
+
+    __table_args__ = (
+        Index("idx_current_meter_timestamp", "meter_id", desc("timestamp")),
+    )
+
+class VoltageDB(Base):
+    __tablename__ = "voltage"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    meter_id = Column(Integer, ForeignKey("meters.meter_id"), nullable=False)
+    timestamp = Column(DateTime, nullable=False)
+
     phase_A_voltage = Column(Float, nullable=False)
+    phase_B_voltage = Column(Float, nullable=False)
+    phase_C_voltage = Column(Float, nullable=False)
+
+    __table_args__ = (
+        Index("idx_voltage_meter_timestamp", "meter_id", desc("timestamp")),
+    )
+
+class PowerDB(Base):
+    __tablename__ = "power"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    meter_id = Column(Integer, ForeignKey("meters.meter_id"), nullable=False)
+    timestamp = Column(DateTime, nullable=False)
+
     phase_A_active_power = Column(Float, nullable=False)
     phase_A_power_factor = Column(Float, nullable=False)
-    phase_A_grid_consumption= Column(Float, nullable=False)
-    phase_A_exported_power = Column(Float, nullable=False)
 
-    phase_B_current = Column(Float, nullable=False)
-    phase_B_voltage = Column(Float, nullable=False)
     phase_B_active_power = Column(Float, nullable=False)
     phase_B_power_factor = Column(Float, nullable=False)
-    phase_B_grid_consumption= Column(Float, nullable=False)
-    phase_B_exported_power = Column(Float, nullable=False)
 
-    phase_C_current = Column(Float, nullable=False)
-    phase_C_voltage = Column(Float, nullable=False)
     phase_C_active_power = Column(Float, nullable=False)
     phase_C_power_factor = Column(Float, nullable=False)
-    phase_C_grid_consumption= Column(Float, nullable=False)
+
+    __table_args__ = (
+        Index("idx_power_meter_timestamp", "meter_id", desc("timestamp")),
+    )
+
+class EnergyDB(Base):
+    __tablename__ = "energy"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    meter_id = Column(Integer, ForeignKey("meters.meter_id"), nullable=False)
+    timestamp = Column(DateTime, nullable=False)
+
+    phase_A_grid_consumption = Column(Float, nullable=False)
+    phase_A_exported_power = Column(Float, nullable=False)
+
+    phase_B_grid_consumption = Column(Float, nullable=False)
+    phase_B_exported_power = Column(Float, nullable=False)
+
+    phase_C_grid_consumption = Column(Float, nullable=False)
     phase_C_exported_power = Column(Float, nullable=False)
 
     __table_args__ = (
-        Index("idx_meter_timestamp", "meter_id", desc("timestamp")),
+        Index("idx_energy_meter_timestamp", "meter_id", desc("timestamp")),
     )
-
-class MeterData(BaseModel):
-    data_id: int
-    meter_id: int
-    timestamp: datetime
-
-    phase_A_current: float
-    phase_A_voltage: float
-    phase_A_active_power: float
-    phase_A_power_factor: float
-    phase_A_grid_consumption: float
-    phase_A_exported_power: float
-
-    phase_B_current: float
-    phase_B_voltage: float
-    phase_B_active_power: float
-    phase_B_power_factor: float
-    phase_B_grid_consumption: float
-    phase_B_exported_power: float
-
-    phase_C_current: float
-    phase_C_voltage: float
-    phase_C_active_power: float
-    phase_C_power_factor: float
-    phase_C_grid_consumption: float
-    phase_C_exported_power: float
-
-    class Config:
-        from_attributes=True
-
