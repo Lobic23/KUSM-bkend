@@ -7,6 +7,7 @@ from ..init_meter import init_meter, remove_meter
 from ..api.iammeter import get_meter_id_by_name
 from ..utils.response_format import convert_format
 from datetime import datetime, date, time
+from ..api.iammeter import add_iammeter_station
 
 router = APIRouter(prefix="/meter", tags=["meter"])
 
@@ -210,23 +211,49 @@ def get_data_by_date_range(
 
 @router.post("/addmeter")
 async def add_meter(request: Request, db: Session = Depends(get_db)):
-    data = await request.json()
-    name = data.get("name")
-    sn = data.get("sn")
+    payload = await request.json()
 
-    if not name or not sn:
-        raise HTTPException(status_code=400, detail = "Missing 'name' or 'sn'")
-    
-    try: 
-        added = init_meter(db, meters=[{"name": name, "sn": sn}])
-        return added[0]
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    payload.setdefault("CountryId", "44")
+    payload.setdefault("TimeZone", "5.75")
+    payload.setdefault("TimeZoneName", "(GMT +05:45) Kathmandu")
+    payload.setdefault("Province", "")
+    payload.setdefault("City", "")
+    payload.setdefault("Address", "")
+    payload.setdefault("Position", "27.619399267478876, 85.5388709190866")
+    payload.setdefault("DZPriceUnit", "NPR")
+
+    if "Name" not in payload or "sn" not in payload:
+        raise HTTPException(
+            status_code= 422, 
+            detail="Missing required fields: Name or sn"
+        )
+
+    result = add_iammeter_station(payload)
+
+    if result is None:
+        raise HTTPException(
+            status_code=502, 
+            detail="Failed to create station in IAMMETER"
+        )
+
+    if not result.get("successful", True):
+        raise HTTPException(
+            status_code=502, 
+            detail=f"IAMMETER API error: {result.get('message', 'Unknown error')}"
+        )
+
+    return {
+        "success": True, 
+        "data": result
+    }
     
 @router.delete("/{sn}")
 def delete_meter(sn: str, force: bool = Query(default = False), db: Session = Depends(get_db)):
     try:
         removed = remove_meter(db,sn,force=force)
-        return {"message": f"Meter '{removed.name}' removed successfully"}
+        return {
+            "success": True, "message": f"Meter '{removed.name}' removed successfully"}
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e))    
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Cannot delete meter : {e}")

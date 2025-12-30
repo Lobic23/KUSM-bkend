@@ -1,11 +1,11 @@
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import Column, Index, String, DateTime, Boolean, Enum, Float, Integer, ForeignKey, desc
+from sqlalchemy import Column, Index, String, DateTime, Boolean, Float, Integer, ForeignKey, desc
 from sqlalchemy.ext.declarative import declarative_base
 from pydantic import BaseModel, EmailStr
+
 Base = declarative_base()
 
-# SQLAlchemy ORM Model
 class UserDB(Base):
     __tablename__ = "users"
     
@@ -17,7 +17,6 @@ class UserDB(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-# Pydantic Models for API
 class User(BaseModel):
     id: str
     email: EmailStr
@@ -26,30 +25,32 @@ class User(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
     class Config:
-        from_attributes=True
-         # this thing just tells sqlalchemy User is deseializable from the table
+        from_attributes = True
+
 
 class MeterDB(Base):
     __tablename__ = "meters"
 
     meter_id = Column(Integer, primary_key=True, autoincrement=True)
-    name= Column(String)
+    name = Column(String)
     sn = Column(String)
-
 
 class Meter(BaseModel):
     meter_id: int
     name: str
     sn: str
-    class Config:
-        from_attributes=True
 
+    class Config:
+        from_attributes = True
+
+# ------------------------
 class CurrentDB(Base):
     __tablename__ = "current"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    meter_id = Column(Integer, ForeignKey("meters.meter_id"), nullable=False)
+    meter_id = Column(Integer, ForeignKey("meters.meter_id", ondelete="CASCADE"), nullable=False)
     timestamp = Column(DateTime, nullable=False)
 
     phase_A_current = Column(Float, nullable=False)
@@ -64,7 +65,7 @@ class VoltageDB(Base):
     __tablename__ = "voltage"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    meter_id = Column(Integer, ForeignKey("meters.meter_id"), nullable=False)
+    meter_id = Column(Integer, ForeignKey("meters.meter_id", ondelete="CASCADE"), nullable=False)
     timestamp = Column(DateTime, nullable=False)
 
     phase_A_voltage = Column(Float, nullable=False)
@@ -79,7 +80,7 @@ class PowerDB(Base):
     __tablename__ = "power"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    meter_id = Column(Integer, ForeignKey("meters.meter_id"), nullable=False)
+    meter_id = Column(Integer, ForeignKey("meters.meter_id", ondelete="CASCADE"), nullable=False)
     timestamp = Column(DateTime, nullable=False)
 
     phase_A_active_power = Column(Float, nullable=False)
@@ -99,7 +100,7 @@ class EnergyDB(Base):
     __tablename__ = "energy"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    meter_id = Column(Integer, ForeignKey("meters.meter_id"), nullable=False)
+    meter_id = Column(Integer, ForeignKey("meters.meter_id", ondelete="CASCADE"), nullable=False)
     timestamp = Column(DateTime, nullable=False)
 
     phase_A_grid_consumption = Column(Float, nullable=False)

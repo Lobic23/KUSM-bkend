@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from .models import MeterDB
+from .models import MeterDB, CurrentDB, VoltageDB, PowerDB, EnergyDB
 
 DEFAULT_METERS = [
         {"name": "Physics Department (Block 6)", "sn": "CD0FF6AB"},
@@ -51,7 +51,7 @@ def add_meter(db: Session, name: str, sn: str):
 def remove_meter(db: Session, sn: str, force: bool = False):
     meter = db.query(MeterDB).filter(MeterDB.sn == sn).first()
     if not meter:
-        raise ValueError("Meter not found")
+        raise ValueError("Meter with SN {sn} not found")
 
     db.delete(meter)
     db.commit()

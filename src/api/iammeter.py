@@ -7,6 +7,7 @@ from datetime import datetime
 
 db = SessionLocal()
 URL = 'https://www.iammeter.com/api/v1/site/meterdata2/'
+IAMMETER_ADD_STATION_URL = 'https://www.iammeter.com/dz/user/BIZ_DZ_DianZhanSave/0'
 
 import requests
 
@@ -131,3 +132,22 @@ def get_meter_id_by_name(meter_name):
         return meter_id
     except Exception as e:
         return e
+
+def add_iammeter_station(station_data: dict):
+    headers = {
+        "Content-Type": "application/json",
+        "Cookie": settings.IAMMETER_COOKIE
+    }
+
+    try:
+        r = requests.post(
+            IAMMETER_ADD_STATION_URL,
+            json=station_data,
+            headers=headers,
+            timeout=10
+        )
+        r.raise_for_status()
+        return r.json()
+    except Exception as e:
+        print("IAMMETER station error:", e)
+        return None
