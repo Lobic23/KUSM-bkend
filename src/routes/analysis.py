@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, desc
 from sqlalchemy.orm import Session
-from ..models import EnergyDB, MeterDB, PowerDB, VoltageDB
+from ..models import EnergyDB, MeterDB, PowerDB, VoltageDB, CurrentDB
 from ..database import get_db
-from ..api.iammeter import voltage_unbalance_status, calculate_voltage_unbalance
+from ..api.iammeter import voltage_status, calculate_unbalance, current_status
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
 
@@ -31,7 +31,7 @@ def get_consumption_and_power(db: Session = Depends(get_db)):
     }
 
 @router.get("/voltage")
-def get_voltage_unbalance(db: Session = Depends(get_db)):
+def get_voltage_analysis(db: Session = Depends(get_db)):
     meters = db.query(MeterDB).all()
     result = []
     for m in meters:
@@ -43,9 +43,13 @@ def get_voltage_unbalance(db: Session = Depends(get_db)):
         )
 
         if not latest_voltage:
+            result.append({
+                "meter_name": m.name,
+                "status": "NO_DATA"
+            })
             continue
 
-        unbalance = calculate_voltage_unbalance(
+        unbalance = calculate_unbalance(
             latest_voltage.phase_A_voltage,
             latest_voltage.phase_B_voltage,
             latest_voltage.phase_C_voltage
@@ -58,7 +62,47 @@ def get_voltage_unbalance(db: Session = Depends(get_db)):
             "phase_B_voltage": latest_voltage.phase_B_voltage,
             "phase_C_voltage": latest_voltage.phase_C_voltage,
             "voltage_unbalance_percent": unbalance,
-            "status": voltage_unbalance_status(unbalance)      
+            "status": voltage_status(unbalance)      
+        })
+
+    return {
+        "success": True,
+        "data": result
+    }
+
+@router.get("/current")
+def get_current_analysis(db: Session = Depends(get_db)):
+    meters = db.query(MeterDB).all()
+    result = []
+    for m in meters:
+        latest_current = (
+            db.query(CurrentDB)
+            .filter(CurrentDB.meter_id == m.meter_id)
+            .order_by(desc(CurrentDB.timestamp))
+            .first()
+        )   
+
+        if not latest_current:
+            result.append({
+                "meter_name": m.name,
+                "status": "NO_DATA"
+            })
+            continue
+
+        unbalance = calculate_unbalance(
+            latest_current.phase_A_current,
+            latest_current.phase_B_current,
+            latest_current.phase_C_current
+        )
+
+        result.append({
+            "meter_name": m.name,
+            "timestamp": latest_current.timestamp,
+            "phase_A_current": latest_current.phase_A_current,
+            "phase_B_current": latest_current.phase_B_current,
+            "phase_C_current": latest_current.phase_C_current,
+            "current_unbalance_percent": unbalance,
+            "status": current_status(unbalance)      
         })
 
     return {
