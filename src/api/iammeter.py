@@ -56,56 +56,53 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 def insert_meterdata(db: Session, meter_id: int, meter_data: dict):
-    data = meter_data["data"]
+    ts = datetime.strptime(meter_data["timestamp"], "%Y/%m/%d %H:%M:%S")
 
-    ts = datetime.strptime(data["localTime"], "%Y/%m/%d %H:%M:%S")
-
-    values = data["values"]
-
-    a_v, a_i, a_p, a_pf, a_import, a_export = values[0]
-    b_v, b_i, b_p, b_pf, b_import, b_export = values[1]
-    c_v, c_i, c_p, c_pf, c_import, c_export = values[2]
+    a = meter_data["phaseAdata"]
+    b = meter_data["phaseBdata"]
+    c = meter_data["phaseCdata"]
 
     current = CurrentDB(
         meter_id=meter_id,
         timestamp=ts,
-        phase_A_current=a_i,
-        phase_B_current=b_i,
-        phase_C_current=c_i,
+        phase_A_current=a["current"],
+        phase_B_current=b["current"],
+        phase_C_current=c["current"],
     )
-
+    
     voltage = VoltageDB(
         meter_id=meter_id,
         timestamp=ts,
-        phase_A_voltage=a_v,
-        phase_B_voltage=b_v,
-        phase_C_voltage=c_v,
+        phase_A_voltage=a["voltage"],
+        phase_B_voltage=b["voltage"],
+        phase_C_voltage=c["voltage"],
     )
+
 
     power = PowerDB(
         meter_id=meter_id,
         timestamp=ts,
-        phase_A_active_power=a_p,
-        phase_A_power_factor=a_pf,
+        phase_A_active_power=a["active_power"],
+        phase_A_power_factor=a["power_factor"],
 
-        phase_B_active_power=b_p,
-        phase_B_power_factor=b_pf,
+        phase_B_active_power=b["active_power"],
+        phase_B_power_factor=b["power_factor"],
 
-        phase_C_active_power=c_p,
-        phase_C_power_factor=c_pf,
+        phase_C_active_power=c["active_power"],
+        phase_C_power_factor=c["power_factor"],
     )
 
     energy = EnergyDB(
         meter_id=meter_id,
         timestamp=ts,
-        phase_A_grid_consumption=a_import,
-        phase_A_exported_power=a_export,
+        phase_A_grid_consumption=a["grid_consumption"],
+        phase_A_exported_power=a["exported_power"],
 
-        phase_B_grid_consumption=b_import,
-        phase_B_exported_power=b_export,
+        phase_B_grid_consumption=b["grid_consumption"],
+        phase_B_exported_power=b["exported_power"],
 
-        phase_C_grid_consumption=c_import,
-        phase_C_exported_power=c_export,
+        phase_C_grid_consumption=c["grid_consumption"],
+        phase_C_exported_power=c["exported_power"],
     )
 
     db.add_all([current, voltage, power, energy])
@@ -120,7 +117,6 @@ def store_all_meter_data():
 
         for meter in meters:
             meter_data = fetch_meter_data(meter.sn)
-            print(meter_data)
             if meter_data is None:
                 continue
             insert_meterdata(db, meter.meter_id, meter_data)
