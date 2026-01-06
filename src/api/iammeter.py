@@ -151,3 +151,27 @@ def add_iammeter_station(station_data: dict):
     except Exception as e:
         print("IAMMETER station error:", e)
         return None
+    
+def calculate_voltage_unbalance(vA, vB, vC):
+    v_avg = (vA + vB + vC) / 3
+    if v_avg == 0:
+        return 0.0
+    
+    max_dev = max(
+        abs(vA - v_avg),
+        abs(vB - v_avg),
+        abs(vC - v_avg)
+    )
+
+    return round((max_dev / v_avg) * 100, 2)
+
+def voltage_unbalance_status(unbalance):
+    if unbalance < 1:
+        return "NORMAL"
+    elif unbalance < 2:
+        return "ACCEPTABLE"
+    elif unbalance < 3: 
+        return "WARNING"
+    else:
+        return "CRITICAL"
+    

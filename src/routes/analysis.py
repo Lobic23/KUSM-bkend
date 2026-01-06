@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import func
+from sqlalchemy import func, desc
 from sqlalchemy.orm import Session
-from ..models import EnergyDB, MeterDB, PowerDB
+from ..models import EnergyDB, MeterDB, PowerDB, VoltageDB
 from ..database import get_db
+from ..api.iammeter import voltage_unbalance_status, calculate_voltage_unbalance
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
 
@@ -28,3 +29,40 @@ def get_consumption_and_power(db: Session = Depends(get_db)):
         "success": True,
         "result": result
     }
+
+@router.get("/voltage")
+def get_voltage_unbalance(db: Session = Depends(get_db)):
+    meters = db.query(MeterDB).all()
+    result = []
+    for m in meters:
+        latest_voltage = (
+            db.query(VoltageDB)
+            .filter(VoltageDB.meter_id == m.meter_id)
+            .order_by(desc(VoltageDB.timestamp))
+            .first()
+        )
+
+        if not latest_voltage:
+            continue
+
+        unbalance = calculate_voltage_unbalance(
+            latest_voltage.phase_A_voltage,
+            latest_voltage.phase_B_voltage,
+            latest_voltage.phase_C_voltage
+        )
+
+        result.append({
+            "meter_name": m.name,
+            "timestamp": latest_voltage.timestamp,
+            "phase_A_voltage": latest_voltage.phase_A_voltage,
+            "phase_B_voltage": latest_voltage.phase_B_voltage,
+            "phase_C_voltage": latest_voltage.phase_C_voltage,
+            "voltage_unbalance_percent": unbalance,
+            "status": voltage_unbalance_status(unbalance)      
+        })
+
+    return {
+        "success": True,
+        "data": result
+    }
+
