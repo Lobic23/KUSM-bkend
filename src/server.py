@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import asyncio
 
-from .routes import meter, oauth, users
+from .routes import meter, oauth, users, analysis
 from .database import db_engine, get_db
 from .models import Base
 from .api import iammeter
@@ -61,7 +61,7 @@ app.add_middleware(
 app.include_router(oauth.router)
 app.include_router(users.router)
 app.include_router(meter.router)
-
+app.include_router(analysis.router)
 
 @app.get("/")
 async def root():
