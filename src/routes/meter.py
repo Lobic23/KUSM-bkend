@@ -1,3 +1,5 @@
+from typing import List
+from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException, Depends, Request, Query
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
@@ -11,6 +13,19 @@ from ..api.iammeter import add_iammeter_station
 
 router = APIRouter(prefix="/meter", tags=["meter"])
 
+# Pydantic models for request validation
+class MeterLocationUpdate(BaseModel):
+    x: float = Field(..., ge=0, le=100, description="X coordinate as percentage (0-100)")
+    y: float = Field(..., ge=0, le=100, description="Y coordinate as percentage (0-100)")
+
+class MeterLocationItem(BaseModel):
+    meter_id: int
+    x: float = Field(..., ge=0, le=100)
+    y: float = Field(..., ge=0, le=100)
+
+class BulkLocationUpdate(BaseModel):
+    locations: List[MeterLocationItem]
+
 @router.get("/")
 def get_all_meters(db: Session = Depends(get_db)):
     meters = db.query(MeterDB).all()
@@ -22,7 +37,9 @@ def get_all_meters(db: Session = Depends(get_db)):
             {
                 "meter_id": m.meter_id,
                 "name": m.name,
-                "sn": m.sn	
+                "sn": m.sn,
+                "x": m.x if hasattr(m, 'x') else None,
+                "y": m.y if hasattr(m, 'y') else None
             }
             for m in meters
         ]
@@ -207,6 +224,81 @@ def get_data_by_date_range(
         "count": len(data),
         "data": data
     }
+    
+
+
+@router.put("/{meter_id}/location")
+def update_meter_location(
+    meter_id: int,
+    location: MeterLocationUpdate,
+    db: Session = Depends(get_db)
+):
+    """Update the map location for a single meter"""
+    meter = db.query(MeterDB).filter(MeterDB.meter_id == meter_id).first()
+    
+    if not meter:
+        raise HTTPException(status_code=404, detail=f"Meter with ID {meter_id} not found")
+    
+    try:
+        meter.x = location.x
+        meter.y = location.y
+        db.commit()
+        db.refresh(meter)
+        
+        return {
+            "success": True,
+            "message": f"Location updated for meter '{meter.name}'",
+            "data": {
+                "meter_id": meter.meter_id,
+                "name": meter.name,
+                "x": meter.x,
+                "y": meter.y
+            }
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update location: {str(e)}")
+    
+
+@router.put("/locations")
+def update_meter_locations(
+    bulk_update: BulkLocationUpdate,
+    db: Session = Depends(get_db)
+):
+    """Update map locations for multiple meters at once"""
+    updated_count = 0
+    errors = []
+    
+    try:
+        for location_item in bulk_update.locations:
+            meter = db.query(MeterDB).filter(
+                MeterDB.meter_id == location_item.meter_id
+            ).first()
+            
+            if meter:
+                meter.x = location_item.x
+                meter.y = location_item.y
+                updated_count += 1
+            else:
+                errors.append(f"Meter ID {location_item.meter_id} not found")
+        
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": f"Updated locations for {updated_count} meter(s)",
+            "updated_count": updated_count,
+            "errors": errors if errors else None
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update locations: {str(e)}")
+
+
+
+
+
+
 
 
 @router.post("/addmeter")

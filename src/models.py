@@ -36,6 +36,8 @@ class MeterDB(Base):
     meter_id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String)
     sn = Column(String)
+    x = Column(Float, nullable=True)  # Map X coordinate (0-100%)
+    y = Column(Float, nullable=True)  # Map Y coordinate (0-100%)
 
 class Meter(BaseModel):
     meter_id: int
