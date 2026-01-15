@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
     finally:
         db.close()
     
-    # task = asyncio.create_task(data_collection())
+    task = asyncio.create_task(data_collection())
 
     try:
         yield
