@@ -92,7 +92,7 @@ def get_latest_meter_data(
         )
         .filter(CurrentDB.meter_id == meter_id)
         .order_by(desc(CurrentDB.timestamp))
-        .first()
+        .first()    
     )
 
     if not row:

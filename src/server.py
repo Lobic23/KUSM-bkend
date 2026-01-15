@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import asyncio
 
-from .routes import meter, oauth, users, analysis, billing, live_data
+from .routes import meter, oauth, users, analysis, billing
 from .database import db_engine, get_db
 from .models import Base
 from .api import iammeter
@@ -66,7 +66,6 @@ app.include_router(users.router)
 app.include_router(meter.router)
 app.include_router(analysis.router)
 app.include_router(billing.router)
-app.include_router(live_data.router)
 
 
 @app.get("/")
