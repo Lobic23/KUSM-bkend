@@ -13,34 +13,105 @@ TARIFF = 8.0
 
 
 def get_power_per_meter_per_day(year: int, month: int, day: int, db: Session):
-  start = datetime(year, month, day)
-  end = start + timedelta(days=1)
-
-  daily_energy = (
-    db.query(
-      EnergyDB.meter_id,
-      func.sum(EnergyDB.phase_A_grid_consumption).label("phase_a_kwh"),
-      func.sum(EnergyDB.phase_B_grid_consumption).label("phase_b_kwh"),
-      func.sum(EnergyDB.phase_C_grid_consumption).label("phase_c_kwh"),
+    start = datetime(year, month, day)
+    end = start + timedelta(days=1)
+    
+    # Get first and last readings for each meter/phase
+    from sqlalchemy import and_
+    
+    # Subquery for first reading of the day
+    first_reading = (
+        db.query(
+            EnergyDB.meter_id,
+            func.min(EnergyDB.timestamp).label("first_time")
+        )
+        .filter(
+            EnergyDB.timestamp >= start,
+            EnergyDB.timestamp < end
+        )
+        .group_by(EnergyDB.meter_id)
+        .subquery()
     )
-    .filter(
-      EnergyDB.timestamp >= start,
-      EnergyDB.timestamp < end
+    
+    # Subquery for last reading of the day
+    last_reading = (
+        db.query(
+            EnergyDB.meter_id,
+            func.max(EnergyDB.timestamp).label("last_time")
+        )
+        .filter(
+            EnergyDB.timestamp >= start,
+            EnergyDB.timestamp < end
+        )
+        .group_by(EnergyDB.meter_id)
+        .subquery()
     )
-    .group_by(EnergyDB.meter_id)
-    .all()
-  )
-
-  if not daily_energy:
-    return None
-
-  meter_to_energy = {}
-
-  for data in daily_energy:
-    total = data.phase_a_kwh or 0 + data.phase_b_kwh or 0 + data.phase_c_kwh or 0
-    meter_to_energy.update({ data.meter_id: total })
-
-  return meter_to_energy
+    
+    # Get first values
+    first_values = (
+        db.query(
+            EnergyDB.meter_id,
+            EnergyDB.phase_A_grid_consumption.label("first_a"),
+            EnergyDB.phase_B_grid_consumption.label("first_b"),
+            EnergyDB.phase_C_grid_consumption.label("first_c"),
+        )
+        .join(
+            first_reading,
+            and_(
+                EnergyDB.meter_id == first_reading.c.meter_id,
+                EnergyDB.timestamp == first_reading.c.first_time
+            )
+        )
+        .all()
+    )
+    
+    # Get last values
+    last_values = (
+        db.query(
+            EnergyDB.meter_id,
+            EnergyDB.phase_A_grid_consumption.label("last_a"),
+            EnergyDB.phase_B_grid_consumption.label("last_b"),
+            EnergyDB.phase_C_grid_consumption.label("last_c"),
+        )
+        .join(
+            last_reading,
+            and_(
+                EnergyDB.meter_id == last_reading.c.meter_id,
+                EnergyDB.timestamp == last_reading.c.last_time
+            )
+        )
+        .all()
+    )
+    
+    # Create lookup dictionaries
+    first_dict = {row.meter_id: row for row in first_values}
+    last_dict = {row.meter_id: row for row in last_values}
+    
+    meter_to_energy = {}
+    
+    for meter_id in first_dict.keys():
+        if meter_id not in last_dict:
+            continue
+            
+        first = first_dict[meter_id]
+        last = last_dict[meter_id]
+        
+        # Calculate consumption as difference
+        phase_a = (last.last_a or 0) - (first.first_a or 0)
+        phase_b = (last.last_b or 0) - (first.first_b or 0)
+        phase_c = (last.last_c or 0) - (first.first_c or 0)
+        
+        total = phase_a + phase_b + phase_c
+        
+        # Handle meter rollover (if meter resets to 0)
+        if total < 0:
+            # This might indicate a meter reset or error
+            # You may want to log this or handle differently
+            continue
+            
+        meter_to_energy[meter_id] = total
+    
+    return meter_to_energy
 
 def calculate_bill(year: int, month: int, db: Session):
   month_key = f"{year}-{month:02d}"

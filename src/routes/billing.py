@@ -28,9 +28,16 @@ def bill(
   )
 
   if not billing:
-    raise HTTPException(
-      status_code=400,
-      detail=f"Billing hasnt been calculated for {month_key}"
+    calculate_bill(year, month, db)
+    billing = (
+      db.query(
+        BillingDB.total_cost,
+        BillingDB.avg_cost_per_day,
+        BillingDB.expensive_day,
+        BillingDB.expensive_day_cost,
+      )
+      .filter(BillingDB.date == month_key)
+      .first()
     )
 
   cost_per_day = (

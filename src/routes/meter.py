@@ -205,6 +205,7 @@ def get_data_by_date_range(
                 CurrentDB.meter_id == meter_id,
                 CurrentDB.timestamp.between(start, end)
             )
+            .distinct(CurrentDB.timestamp)
             .order_by(CurrentDB.timestamp)
             .all()
         )

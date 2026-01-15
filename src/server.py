@@ -8,6 +8,7 @@ from .database import db_engine, get_db
 from .models import Base
 from .api import iammeter
 from .init_meter import init_meter
+from .schedular import schedular
 
 # Create database tables
 Base.metadata.create_all(bind=db_engine)
@@ -50,6 +51,14 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+@app.on_event("startup")
+def start_scheduler():
+    scheduler.start()
+
+@app.on_event("shutdown")
+def shutdown_scheduler():
+    scheduler.shutdown()
 
 # CORS Configuration
 app.add_middleware(
