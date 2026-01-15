@@ -172,7 +172,7 @@ def get_data_by_date_range(
             detail="from_date cannot be later than to_date"
         )
 
-    meter_id = get_meter_id_by_name(meter_name)
+    meter_id = get_meter_id_by_name(db, meter_name)
     if not meter_id:
         raise HTTPException(status_code=404, detail="Meter not found")
 
