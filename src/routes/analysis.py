@@ -27,10 +27,7 @@ def get_consumption_and_power(db: Session = Depends(get_db)):
             "average_power": total_avg_power,
             "average_energy": total_avg_energy
         })
-    return{
-        "success": True,
-        "result": result
-    }
+    return result
     
 MONTHS = {
     1: "jan", 2: "feb", 3: "mar", 4: "apr",
