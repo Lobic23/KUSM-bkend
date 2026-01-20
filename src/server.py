@@ -3,12 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import asyncio
 
-from .routes import meter, oauth, users, analysis, billing
+from .routes import meter, oauth, users, analysis, billing, prediction
 from .database import db_engine, get_db
 from .models import Base
 from .api import iammeter
 from .init_meter import init_meter
-from .schedular import schedular
+from .ml_model import power_prediction_service
 
 # Create database tables
 Base.metadata.create_all(bind=db_engine)
@@ -24,13 +24,23 @@ async def data_collection():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
- 
+    # Initialize database
     db = next(get_db())
     try:
         init_meter(db)
     finally:
         db.close()
     
+    # Load ML model on startup
+    try:
+        power_prediction_service.load_model()
+        print("✓ ML prediction model loaded successfully")
+    except FileNotFoundError:
+        print("⚠ ML model not found. Train a model using /api/prediction/train endpoint")
+    except Exception as e:
+        print(f"⚠ Failed to load ML model: {e}")
+    
+    # Start data collection task
     task = asyncio.create_task(data_collection())
 
     try:
@@ -43,9 +53,6 @@ async def lifespan(app: FastAPI):
             except asyncio.CancelledError:
                 pass
 
-# billing.get_power_per_meter_per_day(2024, 1, 9, next(get_db()))
-# billing.calculate_bill(2024, 1, next(get_db()))
-
 app = FastAPI(
     title="KU Smart Meeter",
     version="1.0.0",
@@ -54,11 +61,11 @@ app = FastAPI(
 
 @app.on_event("startup")
 def start_scheduler():
-    scheduler.start()
+    schedular.start()
 
 @app.on_event("shutdown")
 def shutdown_scheduler():
-    scheduler.shutdown()
+    schedular.shutdown()
 
 # CORS Configuration
 app.add_middleware(
@@ -75,6 +82,7 @@ app.include_router(users.router)
 app.include_router(meter.router)
 app.include_router(analysis.router)
 app.include_router(billing.router)
+app.include_router(prediction.router)  # NEW: Add prediction router
 
 
 @app.get("/")
