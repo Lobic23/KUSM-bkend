@@ -7,13 +7,13 @@ from sqlalchemy.orm import Session
 
 db: Session = SessionLocal()
 DEFAULT_METERS = [
-        {"name": "Physics Department (Block 6)", "path": "./src/data/Physics.csv"},
-        {"name": "Bio-Tech Department (Block 7)", "path": "./src/data/Bio-Tech.csv"},
-        {"name": "Block 11 (Department of Civil Engineering)", "path": "./src/data/Civil.csv"},
-        {"name": "Block 10 (Department of Management Information)", "path": "./src/data/Management.csv"},
-        {"name": "Block 8 (Department of Electrical and Electronics)", "path": "./src/data/Electrical.csv"},
-        {"name": "Boys Hostel", "path": "./src/data/Boys_Hostel.csv"},
-        {"name": "Main Transformer", "path": "./src/data/Main_Transformer.csv"},
+        {"name": "Physics Department (Block 6)", "path": "./data/Physics.csv"},
+        {"name": "Bio-Tech Department (Block 7)", "path": "./data/Bio-Tech.csv"},
+        {"name": "Block 11 (Department of Civil Engineering)", "path": "./data/Civil.csv"},
+        {"name": "Block 10 (Department of Management Information)", "path": "./data/Management.csv"},
+        {"name": "Block 8 (Department of Electrical and Electronics)", "path": "./data/Electrical.csv"},
+        {"name": "Boys Hostel", "path": "./data/Boys_Hostel.csv"},
+        {"name": "Main Transformer", "path": "./data/Main_Transformer.csv"},
     ]
 
 def insert_past_data(

@@ -1,14 +1,99 @@
 #!/usr/bin/env python
 
-# the shebang only works if you are already in the uv's venv
-# the easiest way to open up the venv is to just run 'uv run main.py' once
-# then you can use the shebang on that terminal session
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+import asyncio
 
-import uvicorn
+from src.scheduler import scheduler 
+from src.routes import meter, oauth, users, analysis, billing,data_collection
+from src.database import db_engine, get_db
+from src.models import Base
+from src.init_meter import init_meter
+
+# Create database tables
+# tun only when db changes
+# Base.metadata.create_all(bind=db_engine)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    
+ 
+    # db = next(get_db())
+    # try:
+    #     init_meter(db)
+    # finally:
+    #     db.close()
+    
+    # Start scheduler
+    scheduler.start()
+    
+    # Data collection starts as OFF by default
+    # Will be controlled via API endpoint
+    try:
+        yield
+    finally:
+        print("Shutting down...")
+        
+        # Stop data collection task
+        if data_collection.data_collection_state.task:
+            data_collection.data_collection_state.stop()
+            if not data_collection.data_collection_state.task.done():
+                data_collection.data_collection_state.task.cancel()
+                try:
+                    await asyncio.wait_for(
+                        data_collection.data_collection_state.task, 
+                        timeout=5.0
+                    )
+                except (asyncio.CancelledError, asyncio.TimeoutError):
+                    pass
+        
+        # Shutdown scheduler
+        try:
+            scheduler.shutdown(wait=False)
+        except Exception as e:
+            print(f"Error shutting down scheduler: {e}")
+        
+        print("Shutdown complete")
+
+
+app = FastAPI(
+    title="KU Smart Meeter",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:5174"],  # when in prod use the fend url
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers
+app.include_router(oauth.router)
+app.include_router(users.router)
+app.include_router(meter.router)
+app.include_router(analysis.router)
+app.include_router(billing.router)
+app.include_router(data_collection.router)
+
+
+@app.get("/")
+async def root():
+    return {"message": "KU Smart Meter API is running", "status": "healthy"}
+
+
 if __name__ == "__main__":
+    import uvicorn
     uvicorn.run(
-        "src.server:app",
+        "main:app",
         host="0.0.0.0",
         port=8000, 
         reload=True
     )
+    

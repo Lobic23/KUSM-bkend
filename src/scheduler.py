@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from .database import SessionLocal
 from .api.billing import calculate_bill
 
-schedular = BackgroundScheduler()
+scheduler = BackgroundScheduler()
 
 def daily_billing_job():
     db: Session = SessionLocal()
@@ -15,14 +15,19 @@ def daily_billing_job():
         month = now.month
 
         calculate_bill(year, month, db)
+        print(f"Daily billing job completed for {year}-{month:02d} at {now}")
+    except Exception as e:
+        print(f"Error in daily billing job: {e}")
     finally:
         db.close()
 
 
 
-schedular.add_job(
+scheduler.add_job(
     daily_billing_job,
     trigger="cron",
     hour=0,
     minute=5,   # run at 00:05 every day
+    id="daily_billing_job",
+    replace_existing=True
 )

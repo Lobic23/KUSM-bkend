@@ -3,10 +3,8 @@ import calendar
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy import func
-import json
 
 from ..models import EnergyDB, BillingDB, CostPerDayDB, CostPerMeterDB
-from ..database import get_db
 
 
 TARIFF = 8.0

@@ -6,9 +6,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from ..models import CurrentDB, EnergyDB, MeterDB, PowerDB, VoltageDB
 from ..database import get_db
-from ..init_meter import init_meter, remove_meter
+from ..init_meter import  remove_meter
 from ..api.iammeter import get_meter_id_by_name
-from ..utils.response_format import convert_format
 from datetime import datetime, date, time
 from ..api.iammeter import add_iammeter_station
 
@@ -100,7 +99,7 @@ def get_latest_meter_data(
 
     c, v, p, e = row
 
-    return convert_format(c, v, p, e)
+    return _convert_format(c, v, p, e)
 
 @router.get("/todaysdata/{meter_name}")
 def get_todays_data(meter_name: str, db: Session = Depends(get_db)):
@@ -147,7 +146,7 @@ def get_todays_data(meter_name: str, db: Session = Depends(get_db)):
 
         data = []
         for c, v, p, e in rows:
-            data.append(convert_format(c, v, p, e))
+            data.append(_convert_format(c, v, p, e))
 
         return {
             "success": True,
@@ -218,7 +217,7 @@ def get_data_by_date_range(
 
         data = []
         for c, v, p, e in rows:
-            data.append(convert_format(c, v, p, e))
+            data.append(_convert_format(c, v, p, e))
 
         return {
             "success": True,
@@ -355,3 +354,33 @@ def delete_meter(sn: str, force: bool = Query(default = False), db: Session = De
         raise HTTPException(status_code=404, detail=str(e))    
     except ValueError as e:
         raise HTTPException(status_code=400, detail=f"Cannot delete meter : {e}")
+
+
+
+
+def _convert_format(current, voltage, power, energy):
+    return {
+        "meter_id": current.meter_id,
+        "timestamp": current.timestamp,
+
+        "phase_A_current": current.phase_A_current,
+        "phase_A_voltage": voltage.phase_A_voltage,
+        "phase_A_active_power": power.phase_A_active_power,
+        "phase_A_power_factor": power.phase_A_power_factor,
+        "phase_A_grid_consumption": energy.phase_A_grid_consumption,
+        "phase_A_exported_power": energy.phase_A_exported_power,
+
+        "phase_B_current": current.phase_B_current,
+        "phase_B_voltage": voltage.phase_B_voltage,
+        "phase_B_active_power": power.phase_B_active_power,
+        "phase_B_power_factor": power.phase_B_power_factor,
+        "phase_B_grid_consumption": energy.phase_B_grid_consumption,
+        "phase_B_exported_power": energy.phase_B_exported_power,
+
+        "phase_C_current": current.phase_C_current,
+        "phase_C_voltage": voltage.phase_C_voltage,
+        "phase_C_active_power": power.phase_C_active_power,
+        "phase_C_power_factor": power.phase_C_power_factor,
+        "phase_C_grid_consumption": energy.phase_C_grid_consumption,
+        "phase_C_exported_power": energy.phase_C_exported_power,
+    }

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from .models import MeterDB, CurrentDB, VoltageDB, PowerDB, EnergyDB
+from .models import MeterDB
 
 DEFAULT_METERS = [
         {"name": "Physics Department (Block 6)", "sn": "CD0FF6AB"},
@@ -12,25 +12,29 @@ DEFAULT_METERS = [
     ]
 
 def init_meter(db: Session, meters: list[dict] | None = None):
-    
-
     if meters is None:
         meters = DEFAULT_METERS
 
+    existing_sns = {m.sn for m in db.query(MeterDB.sn).all()}
+    all_exist = all(meter["sn"] in existing_sns for meter in meters)
+    if all_exist :
+        return [] 
+
+    # Only add meters that don't exist
     added_meters = []
     for meter in meters:
-        exists = db.query(MeterDB).filter_by(sn=meter["sn"]).first()
-        if not exists:
+        if meter["sn"] not in existing_sns:
             new_meter = MeterDB(**meter)
             db.add(new_meter)
             added_meters.append(new_meter)
 
-    db.commit()
-
-    for meter in added_meters:
-        db.refresh(meter)
+    if added_meters:
+        db.commit()
+        for meter in added_meters:
+            db.refresh(meter)
 
     return added_meters
+
 
 
 def add_meter(db: Session, name: str, sn: str):

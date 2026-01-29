@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta, date
+from datetime import date
 
-from ..models import EnergyDB, BillingDB, CostPerDayDB, CostPerMeterDB
+from ..models import BillingDB, CostPerDayDB, CostPerMeterDB
 from ..database import get_db
 from ..api.billing import calculate_bill
 
