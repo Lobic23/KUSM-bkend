@@ -21,13 +21,11 @@ def daily_billing_job():
     finally:
         db.close()
 
-
-
 scheduler.add_job(
     daily_billing_job,
     trigger="cron",
     hour=0,
-    minute=5,   # run at 00:05 every day
+    minute=5,
     id="daily_billing_job",
     replace_existing=True
 )

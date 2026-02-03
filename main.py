@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 import asyncio
 
 from src.scheduler import scheduler 
-from src.routes import meter, oauth, prediction, users, analysis, billing,data_collection
+from src.routes import meter, oauth, prediction, users, analysis, billing,data_collection, email
 from src.database import db_engine, get_db
 from src.models import Base
 from src.init_meter import init_meter
@@ -21,11 +21,11 @@ from src.ml_model import power_prediction_service
 async def lifespan(app: FastAPI):
     
  
-    # db = next(get_db())
-    # try:
-    #     init_meter(db)
-    # finally:
-    #     db.close()
+    db = next(get_db())
+    try:
+        init_meter(db)
+    finally:
+        db.close()
 
     # Load ML model on startup
     try:
@@ -39,7 +39,6 @@ async def lifespan(app: FastAPI):
     
     # Start scheduler
     scheduler.start()
-    
     # Data collection starts as OFF by default
     # Will be controlled via API endpoint
     try:
@@ -93,6 +92,8 @@ app.include_router(analysis.router)
 app.include_router(billing.router)
 app.include_router(data_collection.router)
 app.include_router(prediction.router)
+app.include_router(email.router)
+
 
 
 @app.get("/")

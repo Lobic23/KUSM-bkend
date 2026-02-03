@@ -151,3 +151,19 @@ class CostPerMeterDB(Base):
     __table_args__ = (
         UniqueConstraint("date", "meter_id", name="unique_constraint"),
     )
+
+class MeterHealthDB(Base):
+    __tablename__ = "meter_health"
+    meter_id = Column(Integer, ForeignKey("meters.meter_id", ondelete="CASCADE"), primary_key=True)
+
+    last_signature = Column(String, nullable=True)
+    last_change_at = Column(DateTime, nullable=True)
+
+    stuck_alert_active = Column(Boolean, default=False, nullable=False)
+    last_alert_seen_at = Column(DateTime, nullable=True)
+
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
+
+    __table__args = (
+        Index("idx_meter_health_updated", "updated_at")
+    )
