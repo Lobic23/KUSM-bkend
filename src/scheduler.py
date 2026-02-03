@@ -4,6 +4,17 @@ from sqlalchemy.orm import Session
 
 from .database import SessionLocal
 from .api.billing import calculate_bill
+from .utils.meter_status import update_flatline_status
+
+def meter_status_job():
+    db: Session = SessionLocal()
+    try:
+        update_flatline_status(db)
+        print(f"Meter status job completed at {datetime.utcnow()}")
+    except Exception as e:
+        print(f"Error in meter status job: {e}")
+    finally:
+        db.close()
 
 scheduler = BackgroundScheduler()
 
@@ -21,11 +32,21 @@ def daily_billing_job():
     finally:
         db.close()
 
+
+
 scheduler.add_job(
     daily_billing_job,
     trigger="cron",
     hour=0,
     minute=5,
     id="daily_billing_job",
+    replace_existing=True
+)
+
+scheduler.add_job(
+    meter_status_job,
+    trigger="interval",
+    hours=12,
+    id="meter_status_job",
     replace_existing=True
 )
