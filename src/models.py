@@ -1,6 +1,9 @@
 from datetime import datetime
-from sqlalchemy import Column, Index, String, DateTime, Boolean, Float, Integer, ForeignKey, desc, Text, UniqueConstraint
+from enum import Enum
+from sqlalchemy import Column, Index, String, DateTime, Boolean, Float, Integer, ForeignKey, desc, Text, UniqueConstraint,Enum as SQLEnum
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql import func
+
 
 Base = declarative_base()
 
@@ -15,7 +18,6 @@ class MeterDB(Base):
     y = Column(Float, nullable=True)  # Map Y coordinate (0-100%)
 
 
-# ------------------------
 class CurrentDB(Base):
     __tablename__ = "current"
 
@@ -130,3 +132,21 @@ class MeterStatusDB(Base):
 
     last_alert_sent_at = Column(DateTime, nullable=True)
     alert_active = Column(Boolean, nullable=False, default=False)
+
+
+
+class UserRole(str, Enum):
+    SUPER_ADMIN = "super_admin"
+    ADMIN = "admin"
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    full_name = Column(String, nullable=True)
+    role = Column(SQLEnum(UserRole), default=UserRole.ADMIN, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_by = Column(Integer, nullable=True)

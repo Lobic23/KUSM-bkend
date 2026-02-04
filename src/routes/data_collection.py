@@ -5,6 +5,8 @@ from src.api import iammeter
 
 router = APIRouter(prefix="/data-collection", tags=["Data Collection"])
 
+
+
 # Global state for data collection
 class DataCollectionState:
     def __init__(self):

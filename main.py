@@ -5,25 +5,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import asyncio
 
+from src.routes.auth import auth_routes
 from src.scheduler import scheduler 
 from src.routes import meter, prediction, analysis, billing, data_collection, meter_status
-from src.database import db_engine, get_db
-from src.models import Base
-from src.init_meter import init_meter
 from src.ml_model import power_prediction_service
 
-# Create database tables
-# tun only when db changes
-# Base.metadata.create_all(bind=db_engine)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
-    # db = next(get_db())
-    # try:
-    #     init_meter(db)
-    # finally:
-    #     db.close()
 
     # Load ML model on startup
     try:
@@ -76,13 +66,14 @@ app = FastAPI(
 # CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174"],  # when in prod use the fend url
+    allow_origins=["*"],  # when in prod use the fend url
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Include routers
+app.include_router(auth_routes.router)
 app.include_router(meter.router)
 app.include_router(analysis.router)
 app.include_router(billing.router)
