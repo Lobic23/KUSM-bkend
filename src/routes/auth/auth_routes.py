@@ -14,12 +14,12 @@ from src.routes.auth.auth_schemas import(
     MessageResponse
 )
 from src.routes.auth.auth_utils import (
+    get_current_user,
     get_password_hash,
     require_admin,
     require_super_admin,
     verify_password,
     create_access_token,
-    get_current_active_user,
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -58,14 +58,14 @@ async def login(user_login: UserLogin, db: Session = Depends(get_db)):
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user_info(current_user: User = Depends(get_current_active_user)):
+async def get_current_user_info(current_user: User = Depends(get_current_user)):
     return UserResponse.model_validate(current_user)
 
 
 @router.post("/change-password", response_model=MessageResponse)
 async def change_password(
     password_change: PasswordChange,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
 
