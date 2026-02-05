@@ -7,7 +7,7 @@ import asyncio
 
 from src.routes.auth import auth_routes
 from src.scheduler import scheduler 
-from src.routes import meter, prediction, analysis, billing, data_collection, meter_status
+from src.routes import meter, meter_edits, prediction, analysis, billing, data_collection, meter_status
 from src.ml_model import power_prediction_service
 
 
@@ -75,6 +75,7 @@ app.add_middleware(
 # Include routers
 app.include_router(auth_routes.router)
 app.include_router(meter.router)
+app.include_router(meter_edits.router)
 app.include_router(analysis.router)
 app.include_router(billing.router)
 app.include_router(data_collection.router)
