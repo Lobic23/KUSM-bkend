@@ -1,6 +1,19 @@
 from datetime import datetime
 from enum import Enum
-from sqlalchemy import Column, Index, String, DateTime, Boolean, Float, Integer, ForeignKey, desc, Text, UniqueConstraint,Enum as SQLEnum
+from sqlalchemy import (
+    Column,
+    Index,
+    String,
+    DateTime,
+    Boolean,
+    Float,
+    Integer,
+    ForeignKey,
+    desc,
+    Text,
+    UniqueConstraint,
+    Enum as SQLEnum,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 
@@ -22,7 +35,9 @@ class CurrentDB(Base):
     __tablename__ = "current"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    meter_id = Column(Integer, ForeignKey("meters.meter_id", ondelete="CASCADE"), nullable=False)
+    meter_id = Column(
+        Integer, ForeignKey("meters.meter_id", ondelete="CASCADE"), nullable=False
+    )
     timestamp = Column(DateTime, nullable=False)
 
     phase_A_current = Column(Float, nullable=False)
@@ -33,11 +48,14 @@ class CurrentDB(Base):
         Index("idx_current_meter_timestamp", "meter_id", desc("timestamp")),
     )
 
+
 class VoltageDB(Base):
     __tablename__ = "voltage"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    meter_id = Column(Integer, ForeignKey("meters.meter_id", ondelete="CASCADE"), nullable=False)
+    meter_id = Column(
+        Integer, ForeignKey("meters.meter_id", ondelete="CASCADE"), nullable=False
+    )
     timestamp = Column(DateTime, nullable=False)
 
     phase_A_voltage = Column(Float, nullable=False)
@@ -48,11 +66,14 @@ class VoltageDB(Base):
         Index("idx_voltage_meter_timestamp", "meter_id", desc("timestamp")),
     )
 
+
 class PowerDB(Base):
     __tablename__ = "power"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    meter_id = Column(Integer, ForeignKey("meters.meter_id", ondelete="CASCADE"), nullable=False)
+    meter_id = Column(
+        Integer, ForeignKey("meters.meter_id", ondelete="CASCADE"), nullable=False
+    )
     timestamp = Column(DateTime, nullable=False)
 
     phase_A_active_power = Column(Float, nullable=False)
@@ -68,11 +89,14 @@ class PowerDB(Base):
         Index("idx_power_meter_timestamp", "meter_id", desc("timestamp")),
     )
 
+
 class EnergyDB(Base):
     __tablename__ = "energy"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    meter_id = Column(Integer, ForeignKey("meters.meter_id", ondelete="CASCADE"), nullable=False)
+    meter_id = Column(
+        Integer, ForeignKey("meters.meter_id", ondelete="CASCADE"), nullable=False
+    )
     timestamp = Column(DateTime, nullable=False)
 
     phase_A_grid_consumption = Column(Float, nullable=False)
@@ -88,6 +112,7 @@ class EnergyDB(Base):
         Index("idx_energy_meter_timestamp", "meter_id", desc("timestamp")),
     )
 
+
 class BillingDB(Base):
     __tablename__ = "billing"
 
@@ -98,6 +123,7 @@ class BillingDB(Base):
     expensive_day = Column(Integer, nullable=False)
     expensive_day_cost = Column(Float, nullable=False)
 
+
 class CostPerDayDB(Base):
     __tablename__ = "cost_per_day"
 
@@ -106,26 +132,26 @@ class CostPerDayDB(Base):
     day = Column(Integer, nullable=False)
     cost = Column(Float, nullable=False)
 
+
 class CostPerMeterDB(Base):
     __tablename__ = "cost_per_meter"
 
     id = Column(Integer, primary_key=True, index=True)
     date = Column(Text, nullable=False)
     meter_id = Column(
-        Integer,
-        ForeignKey("meters.meter_id", ondelete="CASCADE"),
-        nullable=False
+        Integer, ForeignKey("meters.meter_id", ondelete="CASCADE"), nullable=False
     )
     cost = Column(Float, nullable=False)
 
-    __table_args__ = (
-        UniqueConstraint("date", "meter_id", name="unique_constraint"),
-    )
+    __table_args__ = (UniqueConstraint("date", "meter_id", name="unique_constraint"),)
+
 
 class MeterStatusDB(Base):
     __tablename__ = "meter_status"
 
-    meter_id = Column(Integer, ForeignKey("meters.meter_id", ondelete="CASCADE"), primary_key=True)
+    meter_id = Column(
+        Integer, ForeignKey("meters.meter_id", ondelete="CASCADE"), primary_key=True
+    )
 
     is_flatline = Column(Boolean, nullable=False, default=False)
     checked_at = Column(DateTime, default=datetime.utcnow)
@@ -134,10 +160,24 @@ class MeterStatusDB(Base):
     alert_active = Column(Boolean, nullable=False, default=False)
 
 
+class DataCollectionScheduleDB(Base):
+    """Stores the current data collection schedule configuration"""
+
+    __tablename__ = "data_collection_schedule"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    start_time = Column(String(5), nullable=False)  # HH:MM format
+    end_time = Column(String(5), nullable=False)  # HH:MM format
+    interval_minutes = Column(Integer, nullable=False)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+
 
 class UserRole(str, Enum):
     SUPER_ADMIN = "super_admin"
     ADMIN = "admin"
+
 
 class User(Base):
     __tablename__ = "users"
